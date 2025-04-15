@@ -1,0 +1,119 @@
+.home-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    color: #0D0C0B;
+  }
+  
+  .home-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .home-header h1 {
+    color: #6F7BBF;
+    margin-bottom: 5px;
+  }
+  
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  
+  .module-card {
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    transition: transform 0.3s;
+  }
+  
+  .module-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .module-card h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+  }
+  
+  .module-card p {
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+  
+  .module-stats {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+  
+  .compulsao-module {
+    background: linear-gradient(135deg, #6F7BBF, #79A3D9);
+  }
+  
+  .programacao-module {
+    background: linear-gradient(135deg, #F29F80, #ff6b81);
+  }
+  
+  .relatorios-module {
+    background: linear-gradient(135deg, #FFD166, #F29F80);
+  }
+  
+  .metas-module {
+    background: linear-gradient(135deg, #79A3D9, #6F7BBF);
+  }
+  
+  .quick-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .quick-action-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 25px;
+    background-color: #6F7BBF;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .quick-action-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+  
+  .registrar-gasto {
+    background-color: #ff6b81;
+  }
+  
+  .registrar-recebimento {
+    background-color: #79A3D9;
+  }
+  
+  .home-alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+  }
+  
+  .home-alert.urgent {
+    background-color: #fff0f0;
+    border-left: 4px solid #ff6b81;
+    color: #d32f2f;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
