@@ -1,0 +1,131 @@
+:root {
+  --primary: #9747FF;
+  --primary-light: #BCA2F2;
+  --background: #F9F9F9;
+  --text: #0D0C0B;
+  --text-light: #F5F5F5;
+  --placeholder: #888888;
+}
+
+.loginContainer{
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 577px;
+  background: var(--background);
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 30px;
+  padding: 60px 80px;
+  text-align: center;
+}
+
+.logo {
+  font-family: 'Kalnia', serif;
+  font-size: 48px;
+  font-weight: 400;
+  color: var(--primary);
+  margin-bottom: 60px;
+}
+
+.loginForm{
+  flex-direction: column;
+  gap: 25px;
+}
+
+.formGroup {
+  position: relative;
+  text-align: left;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+
+.formInput {
+  width: 100%;
+  height: 57px;
+  background: var(--background);
+  border: 1px solid var(--text);
+  border-radius: 10px;
+  padding: 0 20px;
+  font-size: 16px;
+  font-family: 'Public Sans', sans-serif;
+  margin-bottom: 1rem;
+}
+
+.formInput::placeholder {
+  color: var(--placeholder);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.forgotPassword {
+  display: block;
+  text-align: right;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.loginBtn {
+  padding: 15px 22px;
+  width: 160px;
+  background: var(--primary);
+  color: var(--text-light);
+  border-radius: 10px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  transition: background 0.3s ease;
+  margin-bottom: 10rem;
+  text-decoration: none;
+}
+
+.loginBtn:hover {
+  background: #7d3dc8;
+}
+
+.signupLink {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.signupLink a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+  margin-left: 2rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .loginCard {
+    padding: 40px 30px;
+    max-width: 90%;
+  }
+  
+  .logo {
+    font-size: 36px;
+    margin-bottom: 40px;
+  }
+  
+  .formGroup label {
+    font-size: 16px;
+  }
+  
+  .formInput {
+    height: 50px;
+  }
+}
