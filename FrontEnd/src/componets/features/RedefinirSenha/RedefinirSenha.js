@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 
-function EsqueceuSenhaLink() {
-  // Aplica estilos globais (mesmo padrão do Login)
+function RedefinirSenha() {
+  // Aplica estilos globais (mesmo padrão)
   useEffect(() => {
     const styleElement = document.createElement('style');
     styleElement.innerHTML = `
@@ -37,38 +37,43 @@ function EsqueceuSenhaLink() {
         <h1 style={styles.logo}>Controla+</h1>
         
         <div style={styles.instructions}>
-          <h2 style={styles.instructionsTitle}>Esqueceu sua senha?</h2>
-          <p style={styles.instructionsText}>Siga as instruções para recuperar o acesso.</p>
+          <h2 style={styles.instructionsTitle}>Redefinir senha</h2>
+          <p style={styles.instructionsText}>
+            Crie uma nova senha para acessar sua conta.
+          </p>
         </div>
 
         <form style={styles.loginForm}>
           <div style={styles.formGroup}>
-            <label htmlFor="email" style={styles.label}>Email</label>
+            <label htmlFor="novaSenha" style={styles.label}>Nova senha</label>
             <input
-              type="email"
-              id="email"
+              type="password"
+              id="novaSenha"
               style={styles.formInput}
-              placeholder="Digite seu email cadastrado"
+              placeholder="Digite sua nova senha"
+            />
+          </div>
+
+          <div style={styles.formGroup}>
+            <label htmlFor="confirmarSenha" style={styles.label}>Confirme a nova senha</label>
+            <input
+              type="password"
+              id="confirmarSenha"
+              style={styles.formInput}
+              placeholder="Repita a nova senha"
             />
           </div>
 
           <div style={styles.buttonContainer}>
-            <Link to="/codigoVerificacao" style={styles.loginBtn}>Enviar Código</Link>
+            <Link to="/login" style={styles.loginBtn}>Redefinir Senha</Link>
           </div>
         </form>
-
-        <div style={styles.signupContainer}>
-          <div style={styles.signupLink}>
-            <span>Lembrou da senha?</span>
-            <Link to="/login" style={styles.signupLinkAnchor}>Faça login</Link>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
-// Estilos padronizados (mesma estrutura do Login)
+// Estilos IDÊNTICOS aos componentes anteriores
 const styles = {
   loginContainer: {
     width: '100%'
@@ -88,7 +93,7 @@ const styles = {
     fontSize: "48px",
     fontWeight: "400",
     color: "#9747FF",
-    marginBottom: "40px", // Um pouco menor que no login
+    marginBottom: "40px",
   },
   instructions: {
     marginBottom: "30px",
@@ -103,7 +108,8 @@ const styles = {
   instructionsText: {
     fontSize: "16px",
     color: "#0D0C0B",
-    opacity: 0.8
+    opacity: 0.8,
+    lineHeight: "1.5"
   },
   loginForm: {
     display: "flex",
@@ -173,4 +179,4 @@ const styles = {
   },
 };
 
-export default EsqueceuSenhaLink;
+export default RedefinirSenha;
