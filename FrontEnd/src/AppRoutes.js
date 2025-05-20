@@ -8,6 +8,8 @@ import RedefinirSenha from './componets/features/RedefinirSenha/RedefinirSenha'/
 import Gastos from './componets/features/Gastos/gastos'; // Nome do arquivo padronizado
 import Metas from './componets/features/Metas/metas'; // Nome padronizado
 import Projecao from './componets/features/Projecao/projecao'; // Nome padronizado
+import ResumodeGastos from './componets/features/ResumodeGastos/ResumodeGastos'; // Caminho novo 
+
 
 function AppRoutes() {
   return (
@@ -22,6 +24,7 @@ function AppRoutes() {
       <Route path="/gastos-fixos" element={<Gastos />} />
       <Route path="/metas-investimentos" element={<Metas />} />
       <Route path="/projecao" element={<Projecao />} />
+      <Route path="/resumo" element={<ResumodeGastos />} />
     </Routes>
   );
 }
