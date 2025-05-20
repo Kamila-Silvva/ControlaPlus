@@ -6,8 +6,8 @@ export default function ResumodeGastos() {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
-  const [gastosProjetados, setGastosProjetados] = useState([]);  // antes gastosFixos
-  const [gastosReais, setGastosReais] = useState([]);            // antes gastosVariados
+  const [gastosProjetados, setGastosProjetados] = useState([]);  
+  const [gastosReais, setGastosReais] = useState([]);            
   const [gastosCompulsivos, setGastosCompulsivos] = useState([]);
 
   const [modalAberto, setModalAberto] = useState(false);
