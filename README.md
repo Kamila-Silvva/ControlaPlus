@@ -65,7 +65,7 @@ O Controla+ vai além de uma simples planilha de gastos. Ele oferece um fluxo gu
 
 ## 📁 Estrutura do Projeto (Sugestão)
 
-/ControlaPlus
+ControlaPlus
 |
 |-- /FrontEnd
 |   |-- /public
@@ -156,11 +156,11 @@ A aplicação React será aberta no seu navegador, geralmente em http://localhos
 Todas as rotas de dados financeiros são protegidas e requerem um token JWT no cabeçalho Authorization: Bearer <token>.
 
 Autenticação:
-    -   POST /api/cadastro
-    -   POST /api/login
-    -   POST /api/solicitar-redefinicao
-    -   POST /api/verificar-codigo-redefinicao
-    -   POST /api/redefinir-senha
+    - POST /api/cadastro
+    - POST /api/login
+    - POST /api/solicitar-redefinicao
+    - POST /api/verificar-codigo-redefinicao
+    - POST /api/redefinir-senha
 
 Rendas:
     -  GET /api/rendas
