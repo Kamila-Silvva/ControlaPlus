@@ -102,7 +102,7 @@ const ModalMeta = ({ item, onSave, onClose }) => {
         </div>
 
         <div className={styles['botoes-modal']}>
-          <Button onClick={onClose} variant="secondary">
+          <Button onClick={onClose} variant="secondary" className={styles['botao-secundario']}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit}>

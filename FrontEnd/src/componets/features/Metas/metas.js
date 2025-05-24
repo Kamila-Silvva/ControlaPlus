@@ -1,236 +1,407 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ProgressoContext } from '../../../context/ProgressoContext';
-import ModalEdicao from '../../shared/ModalMeta';
-import api from '../../../services/api';
-import styles from '../../../styles/Projecao.module.css';
+import React, { useState, useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ProgressoContext } from "../../../context/ProgressoContext";
+import ModalMeta from "../../shared/ModalMeta"; 
+import styles from "../../../styles/Projecao.module.css"; 
 
-const formatarMoeda = (valor) => {
-  return (valor || 0).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  });
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("userToken");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 };
 
 const MetasInvestimentos = () => {
   const navigate = useNavigate();
-  const { etapas, etapaAtual } = useContext(ProgressoContext);
-  const [descricao, setDescricao] = useState("");
-  const [valor, setValor] = useState("");
-  const [tipo, setTipo] = useState("Meta");
-  const [prazoMeses, setPrazoMeses] = useState(1);
+  const progressoContext = useContext(ProgressoContext);
+  const etapas = progressoContext?.etapas;
+  const etapaAtual = progressoContext?.etapaAtual;
+
+  const initialState = {
+    descricao: "",
+    valorTotal: "",
+    tipo: "Meta",
+    prazoMeses: "1",
+  }; 
+  const [form, setForm] = useState(initialState);
   const [metas, setMetas] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [itemEditando, setItemEditando] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true); 
+
+  const formatarMoeda = (valor) =>
+    (valor || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
 
   useEffect(() => {
-    const carregarMetas = async () => {
+    const fetchMetas = async () => {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem("userToken");
+      if (!token) {
+        setError("Usuário não autenticado. Redirecionando para login...");
+        setTimeout(() => navigate("/login"), 2000);
+        setLoading(false);
+        return;
+      }
       try {
-        const response = await api.getMetas();
-        setMetas(response.data);
-        setError(null);
-      } catch (error) {
-        setError('Erro ao carregar metas');
-        console.error(error);
+        const response = await fetch("http://localhost:3001/api/metas", {
+          headers: getAuthHeaders(),
+        });
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem("userToken");
+            localStorage.removeItem("currentUser");
+            navigate("/login");
+            throw new Error("Sessão expirada. Faça login novamente.");
+          }
+          const dataError = await response
+            .json()
+            .catch(() => ({ message: "Erro desconhecido ao buscar metas." }));
+          throw new Error(
+            dataError.message || `Erro ao buscar metas: ${response.statusText}`
+          );
+        }
+        const data = await response.json();
+        setMetas(
+          data.map((meta) => ({
+            ...meta,
+            valorParcela: meta.valorTotal / meta.prazoMeses,
+          }))
+        );
+      } catch (err) {
+        setError(err.message);
+        console.error("Erro ao buscar metas:", err);
       } finally {
         setLoading(false);
       }
     };
-    
-    carregarMetas();
-  }, []);
+    fetchMetas();
+  }, [navigate]);
 
-  const adicionarItem = async () => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const fieldName = name === "valor" ? "valorTotal" : name;
+    setForm((prev) => ({ ...prev, [fieldName]: value }));
+    if (error) setError(null);
+  };
+
+  const adicionarMeta = async () => {
+    if (!form.descricao.trim()) {
+      setError("Insira uma descrição válida");
+      return;
+    }
+    const valorNum = parseFloat(form.valorTotal); 
+    const prazoNum = parseInt(form.prazoMeses, 10);
+    if (isNaN(valorNum) || valorNum <= 0) {
+      setError("O valor total deve ser um número positivo");
+      return;
+    }
+    if (isNaN(prazoNum) || prazoNum <= 0) {
+      setError("O prazo deve ser um número inteiro e positivo");
+      return;
+    }
+
+    const novaMetaPayload = {
+      descricao: form.descricao,
+      valorTotal: valorNum,
+      tipo: form.tipo,
+      prazoMeses: prazoNum,
+    };
+    setLoading(true);
     try {
-      if (!descricao.trim()) throw new Error("Insira uma descrição");
-      
-      const valorTotal = parseFloat(valor);
-      if (isNaN(valorTotal)) throw new Error("Valor inválido");
-      
-      const prazoNumerico = parseInt(prazoMeses);
-      if (isNaN(prazoNumerico)) throw new Error("Prazo inválido");
-
-      const response = await api.createMeta({
-        descricao,
-        valorTotal,
-        tipo,
-        prazoMeses: prazoNumerico
+      const response = await fetch("http://localhost:3001/api/metas", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(novaMetaPayload),
       });
-      
-      setMetas([...metas, response.data]);
-      setDescricao("");
-      setValor("");
-      setTipo("Meta");
-      setPrazoMeses(1);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Erro ao criar meta.");
+      setMetas([...metas, data]); 
+      setForm(initialState);
       setError(null);
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const removerItem = async (id) => {
-    if (window.confirm("Tem certeza que deseja remover este item?")) {
+  const removerMeta = async (id) => {
+    if (
+      window.confirm("Tem certeza que deseja remover esta meta/investimento?")
+    ) {
+      setLoading(true);
       try {
-        await api.deleteMeta(id);
-        setMetas(metas.filter(item => item.id !== id));
+        const response = await fetch(`http://localhost:3001/api/metas/${id}`, {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+        });
+        if (!response.ok) {
+          const dataError = await response
+            .json()
+            .catch(() => ({ message: "Erro desconhecido ao remover meta." }));
+          throw new Error(dataError.message || "Erro ao remover meta.");
+        }
+        setMetas(metas.filter((meta) => meta.id !== id));
         setError(null);
-      } catch (error) {
-        setError('Erro ao remover meta');
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   const editarItem = (item) => {
-    setItemEditando(item);
+    setItemEditando({
+      ...item,
+      valorTotal: item.valorTotal.toString(), 
+      prazoMeses: item.prazoMeses.toString(), 
+    });
   };
 
-  const salvarEdicao = async (dadosEditados) => {
+  const salvarEdicao = async (dadosEditadosModal) => {
+    const valorNum = parseFloat(dadosEditadosModal.valor);
+    const prazoNum = parseInt(dadosEditadosModal.prazoMeses, 10);
+
+    if (isNaN(valorNum) || valorNum <= 0) {
+      setError("O valor para edição é inválido.");
+      return;
+    }
+    if (isNaN(prazoNum) || prazoNum <= 0) {
+      setError("O prazo para edição é inválido.");
+      return;
+    }
+
+    const payload = {
+      id: dadosEditadosModal.id, 
+      descricao: dadosEditadosModal.descricao,
+      valorTotal: valorNum,
+      tipo: dadosEditadosModal.tipo,
+      prazoMeses: prazoNum,
+    };
+    setLoading(true);
     try {
-      const valorTotal = parseFloat(dadosEditados.valor);
-      const prazoMeses = parseInt(dadosEditados.prazoMeses);
-      
-      const response = await api.updateMeta(dadosEditados.id, {
-        descricao: dadosEditados.descricao,
-        valorTotal,
-        tipo: dadosEditados.tipo,
-        prazoMeses,
-        valorParcela: valorTotal / prazoMeses
-      });
-      
-      setMetas(metas.map(item => 
-        item.id === dadosEditados.id ? response.data : item
-      ));
+      const response = await fetch(
+        `http://localhost:3001/api/metas/${dadosEditadosModal.id}`,
+        {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.message || "Erro ao atualizar meta.");
+      setMetas(metas.map((m) => (m.id === dadosEditadosModal.id ? data : m)));
       setItemEditando(null);
       setError(null);
-    } catch (error) {
-      setError('Erro ao atualizar meta');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const avancarEtapa = () => {
-    if (metas.length === 0) {
-      setError("Adicione pelo menos uma meta ou investimento");
-      return;
-    }
-    navigate('/projecao');
+    navigate("/projecao");
   };
-
   const voltarEtapa = () => {
-    navigate('/gastos-fixos');
+    navigate("/gastos-fixos");
   };
 
-  if (loading) {
-    return <div className={styles.loading}>Carregando...</div>;
+  const componentStyles = {
+    loadingContainer: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "80vh",
+      fontSize: "1.2rem",
+      color: "var(--roxo-escuro)",
+    },
+  };
+
+  if (loading && metas.length === 0) {
+    return (
+      <div style={componentStyles.loadingContainer}>Carregando metas...</div>
+    );
   }
 
   return (
     <div className={styles.containerPrincipal}>
       <div className={styles.cabecalho}>
-        <h1 className={styles.tituloApp}>Controla<span className={styles.destaqueTitulo}>+</span></h1>
-        <h2 className={styles.subtitulo}>Projeção</h2>
+        <h1 className={styles.tituloApp}>
+          Controla<span className={styles.destaqueTitulo}>+</span>
+        </h1>
+        <h2 className={styles.subtitulo}>Metas e Investimentos</h2>
         <p className={styles.textoDescritivo}>
-          Defina suas metas e investimentos para alcançar seus objetivos financeiros.
+          Defina seus objetivos financeiros de curto, médio e longo prazo.
         </p>
       </div>
-
-      {error && <div className={styles['error-message']}>{error}</div>}
-
-      <div className={styles.barraProgresso}>
-        {etapas.map((etapa, index) => (
-          <div key={index} className={styles.etapaContainer}>
-            <div className={`${styles.marcadorEtapa} ${index === etapaAtual ? styles['etapa-ativa'] : styles['etapa-inativa']}`}>
-              {index + 1}
+      {etapas && etapaAtual !== undefined && (
+        <div className={styles.barraProgresso}>
+          {etapas.map((etapa, index) => (
+            <div key={index} className={styles.etapaContainer}>
+              <div
+                className={`${styles.marcadorEtapa} ${
+                  index === etapaAtual
+                    ? styles["etapa-ativa"]
+                    : styles["etapa-inativa"]
+                }`}
+              >
+                {index + 1}
+              </div>
+              <span
+                className={`${styles["rotulo-etapa"]} ${
+                  index === etapaAtual
+                    ? styles["rotulo-ativo"]
+                    : styles["rotulo-inativo"]
+                }`}
+              >
+                {etapa}
+              </span>
             </div>
-            <span className={`${styles['rotulo-etapa']} ${index === etapaAtual ? styles['rotulo-ativo'] : styles['rotulo-inativo']}`}>
-              {etapa}
-            </span>
+          ))}
+        </div>
+      )}
+      <div
+        className={
+          styles["formulario-container-metas"] || styles["formulario-container"]
+        }
+      >
+        <h3 className={styles["titulo-secao"]}>Minhas Metas e Investimentos</h3>
+        {error && (
+          <div className={styles["error-message"]}>
+            {error}
+            <button
+              onClick={() => setError(null)}
+              className={styles["fechar-erro"]}
+            >
+              ×
+            </button>
           </div>
-        ))}
-      </div>
+        )}
+        {loading && metas.length > 0 && (
+          <p
+            style={{
+              textAlign: "center",
+              margin: "1rem",
+              color: "var(--roxo-principal)",
+            }}
+          >
+            Processando...
+          </p>
+        )}
 
-      <div className={styles['formulario-container-metas']}>
-        <h3 className={styles['titulo-secao']}>Metas e Investimentos</h3>
-        
-        <div className={styles['grupo-campos']}>
-          <div className={styles['campo-formulario']}>
-            <label className={styles.rotulo}>Descrição</label>
-            <input 
-              className={styles['campo-input']}
-              value={descricao} 
-              onChange={(e) => setDescricao(e.target.value)} 
-              placeholder="Ex: Viagem para Europa" 
+        <div className={styles["grupo-campos"]}>
+          <div className={styles["campo-formulario"]}>
+            <label className={styles.rotulo}>Descrição*</label>
+            <input
+              className={styles["campo-input"]}
+              name="descricao"
+              value={form.descricao}
+              onChange={handleChange}
+              placeholder="Ex: Viagem para Europa"
+              disabled={loading}
             />
           </div>
-          
-          <div className={styles['campo-formulario']}>
-            <label className={styles.rotulo}>Valor Total (R$)</label>
-            <input 
-              className={styles['campo-input']}
-              type="number" 
-              value={valor} 
-              onChange={(e) => setValor(e.target.value)} 
-              placeholder="10000,00"
+          <div className={styles["campo-formulario"]}>
+            <label className={styles.rotulo}>Valor Total (R$)*</label>
+            <input
+              type="number"
+              className={styles["campo-input"]}
+              name="valor"
+              value={form.valorTotal}
+              onChange={handleChange}
+              placeholder="10000.00"
               step="0.01"
               min="0"
+              disabled={loading}
             />
           </div>
-          
-          <div className={styles['campo-formulario']}>
-            <label className={styles.rotulo}>Tipo</label>
-            <select 
-              className={styles['campo-select']}
-              value={tipo} 
-              onChange={(e) => setTipo(e.target.value)}
+          <div className={styles["campo-formulario"]}>
+            <label className={styles.rotulo}>Tipo*</label>
+            <select
+              className={styles["campo-select"]}
+              name="tipo"
+              value={form.tipo}
+              onChange={handleChange}
+              disabled={loading}
             >
               <option value="Meta">Meta</option>
               <option value="Investimento">Investimento</option>
             </select>
           </div>
-
-          <div className={styles['campo-formulario']}>
-            <label className={styles.rotulo}>Prazo (meses)</label>
-            <input 
-              className={styles['campo-input']}
+          <div className={styles["campo-formulario"]}>
+            <label className={styles.rotulo}>Prazo (meses)*</label>
+            <input
               type="number"
-              value={prazoMeses}
-              onChange={(e) => setPrazoMeses(e.target.value)}
+              className={styles["campo-input"]}
+              name="prazoMeses"
+              value={form.prazoMeses}
+              onChange={handleChange}
               min="1"
+              disabled={loading}
             />
           </div>
-
-          <button className={styles['botao-adicionar']} onClick={adicionarItem}>
-            Adicionar
+          <button
+            className={styles["botao-adicionar"]}
+            onClick={adicionarMeta}
+            disabled={loading}
+          >
+            {loading ? "Adicionando..." : "Adicionar"}
           </button>
         </div>
 
         {metas.length > 0 && (
-          <div className={styles['lista-container']}>
-            <h4 className={styles['titulo-lista']}>Lista de Metas e Investimentos</h4>
-            <div className={styles['itens-lista']}>
-              {metas.map((item) => (
-                <div key={item.id} className={styles['item-lista']}>
+          <div className={styles["lista-container"]}>
+            <h4 className={styles["titulo-lista"]}>
+              Suas Metas e Investimentos
+            </h4>
+            <div className={styles["itens-lista"]}>
+              {metas.map((meta) => (
+                <div key={meta.id} className={styles["item-lista"]}>
                   <div>
-                    <p className={styles['descricao-item']}>
-                      {item.descricao} <span className={styles[`badge-${item.tipo.toLowerCase()}`]}>{item.tipo}</span>
+                    <p className={styles["descricao-item"]}>
+                      {meta.descricao}{" "}
+                      <span
+                        className={`${styles.badge} ${
+                          meta.tipo === "Meta"
+                            ? styles["badge-meta"]
+                            : styles["badge-investimento"]
+                        }`}
+                      >
+                        {meta.tipo}
+                      </span>
                     </p>
-                    <p className={styles['detalhes-item']}>
-                      <strong>Total:</strong> {formatarMoeda(item.valorTotal)}
+                    <p className={styles["detalhes-item"]}>
+                      <strong>Total:</strong> {formatarMoeda(meta.valorTotal)}
                     </p>
-                    <p className={styles['detalhes-item']}>
-                      <strong>Parcela mensal:</strong> {formatarMoeda(item.valorParcela)} • {item.prazoMeses} meses
+                    <p className={styles["detalhes-item"]}>
+                      <strong>Parcela mensal:</strong>{" "}
+                      {formatarMoeda(meta.valorParcela)}
+                    </p>
+                    <p className={styles["detalhes-item"]}>
+                      <strong>Prazo:</strong> {meta.prazoMeses} meses
                     </p>
                   </div>
-                  <div className={styles['botoes-acao']}>
-                    <button 
-                      className={styles['botao-editar']}
-                      onClick={() => editarItem(item)}
+                  <div className={styles["botoes-acao"]}>
+                    <button
+                      className={styles["botao-editar"]}
+                      onClick={() => editarItem(meta)}
+                      disabled={loading}
                     >
                       Editar
                     </button>
-                    <button 
-                      className={styles['botao-remover']}
-                      onClick={() => removerItem(item.id)}
+                    <button
+                      className={styles["botao-remover"]}
+                      onClick={() => removerMeta(meta.id)}
+                      disabled={loading}
                     >
                       Remover
                     </button>
@@ -240,29 +411,31 @@ const MetasInvestimentos = () => {
             </div>
           </div>
         )}
-
-        <div className={styles['controle-navegacao']}>
-          <button 
-            className={styles['botao-voltar']}
+        <div className={styles["controle-navegacao"]}>
+          <button
+            className={styles["botao-voltar"]}
             onClick={voltarEtapa}
+            disabled={loading}
           >
-            Voltar
+            Voltar (Gastos)
           </button>
-          <button 
+          <button
             className={styles.botao}
             onClick={avancarEtapa}
-            disabled={metas.length === 0}
+            disabled={loading || (metas.length === 0 && !error)}
           >
-            Avançar
+            Avançar (Projeção)
           </button>
         </div>
       </div>
-
       {itemEditando && (
-        <ModalEdicao
+        <ModalMeta
           item={itemEditando}
           onSave={salvarEdicao}
-          onClose={() => setItemEditando(null)}
+          onClose={() => {
+            setItemEditando(null);
+            setError(null);
+          }}
         />
       )}
     </div>

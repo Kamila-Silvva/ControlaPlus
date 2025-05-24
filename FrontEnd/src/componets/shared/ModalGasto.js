@@ -5,12 +5,13 @@ import Select from './Select';
 import Button from './Button';
 import styles from '../../styles/Projecao.module.css';
 
-const ModalGasto = ({ item, onSave, onClose }) => {
+const ModalGasto = ({ item, onSave, onClose, categorias }) => {
   const [dadosEditados, setDadosEditados] = useState({
     descricao: '',
     valor: 0,
     frequencia: 'Mensal',
-    mesPagamento: ''
+    mesPagamento: '',
+    categoria: 'Outros' // Categoria padrão
   });
 
   useEffect(() => {
@@ -20,7 +21,8 @@ const ModalGasto = ({ item, onSave, onClose }) => {
         descricao: item.descricao || '',
         valor: item.valor || 0,
         frequencia: item.frequencia || 'Mensal',
-        mesPagamento: item.mesPagamento || ''
+        mesPagamento: item.mesPagamento || '',
+        categoria: item.categoria || 'Outros'
       });
     }
   }, [item]);
@@ -43,6 +45,11 @@ const ModalGasto = ({ item, onSave, onClose }) => {
     
     if (dadosEditados.frequencia !== "Mensal" && !dadosEditados.mesPagamento) {
       alert("Por favor, selecione o mês de pagamento");
+      return;
+    }
+
+    if (!dadosEditados.categoria) {
+      alert("Por favor, selecione uma categoria");
       return;
     }
 
@@ -83,6 +90,19 @@ const ModalGasto = ({ item, onSave, onClose }) => {
           />
         </div>
         
+        <div className={styles['campo-formulario']}>
+          <Label>Categoria</Label>
+          <Select 
+            name="categoria"
+            value={dadosEditados.categoria}
+            onChange={handleChange}
+          >
+            {categorias.map((categoria, i) => (
+              <option key={i} value={categoria}>{categoria}</option>
+            ))}
+          </Select>
+        </div>
+
         <div className={styles['campo-formulario']}>
           <Label>Frequência</Label>
           <Select 
@@ -127,7 +147,7 @@ const ModalGasto = ({ item, onSave, onClose }) => {
         )}
 
         <div className={styles['botoes-modal']}>
-          <Button onClick={onClose} variant="secondary">
+          <Button onClick={onClose} variant="secondary" className={styles['botao-secundario']}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit}>

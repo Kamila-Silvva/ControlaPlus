@@ -127,7 +127,7 @@ const ModalRenda = ({ item, onSave, onClose }) => {
         )}
 
         <div className={styles['botoes-modal']}>
-          <Button onClick={onClose} variant="secondary">
+          <Button onClick={onClose} variant="secondary" className={styles['botao-secundario']}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit}>

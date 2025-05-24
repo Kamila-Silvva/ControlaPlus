@@ -689,7 +689,7 @@ body {
 
 /* Formulário */
 .formulario-container {
-  max-width: 70%;
+  max-width: 80%;
   margin: 0 auto;
   padding: 1.5rem;
   box-shadow: 2px 2px 2px 2px rgb(89 80 80 / 26%);
