@@ -62,7 +62,7 @@ O Controla+ vai além de uma simples planilha de gastos. Ele oferece um fluxo gu
       * `bcryptjs` para hashing de senhas
       * `jsonwebtoken` para autenticação baseada em tokens JWT
       * `cors` para permitir requisições do frontend
-      
+
 ## 🚀 Configuração e Instalação
 
 ### Pré-requisitos
@@ -109,14 +109,14 @@ A aplicação React será aberta no seu navegador, geralmente em http://localhos
 
 Todas as rotas de dados financeiros são protegidas e requerem um token JWT no cabeçalho Authorization: Bearer <token>.
 
-Autenticação:
-    * POST /api/cadastro
-    * POST /api/login
-    * POST /api/solicitar-redefinicao
-    * POST /api/verificar-codigo-redefinicao
-    * POST /api/redefinir*senha
+* Autenticação:
+    ** POST /api/cadastro
+    ** POST /api/login
+    ** POST /api/solicitar-redefinicao
+    ** POST /api/verificar-codigo-redefinicao
+    ** POST /api/redefinir-senha
 
-Rendas:
+* Rendas:
     *  GET /api/rendas
     *  POST /api/rendas
     *  PUT /api/rendas/:id
