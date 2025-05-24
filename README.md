@@ -62,53 +62,7 @@ O Controla+ vai além de uma simples planilha de gastos. Ele oferece um fluxo gu
       * `bcryptjs` para hashing de senhas
       * `jsonwebtoken` para autenticação baseada em tokens JWT
       * `cors` para permitir requisições do frontend
-
-## 📁 Estrutura do Projeto (Sugestão)
-
-ControlaPlus
-|
-|-- /FrontEnd
-|   |-- /public
-|   |-- /src
-|   |   |-- /assets
-|   |   |-- /componets
-|   |   |   |-- /features
-|   |   |   |   |-- Cadastro/Cadastro.jsx
-|   |   |   |   |-- Login/Login.jsx
-|   |   |   |   |-- EsqueceuSenhaLink/EsqueceuSenhaLink.jsx
-|   |   |   |   |-- CodigoVerificacao/CodVerificacao.jsx
-|   |   |   |   |-- RedefinirSenha/RedefinirSenha.jsx
-|   |   |   |   |-- Renda/renda.jsx
-|   |   |   |   |-- Gastos/gastos.jsx
-|   |   |   |   |-- Metas/metas.jsx
-|   |   |   |   |-- Projecao/projecao.jsx
-|   |   |   |   |-- Dashboard/Dashboard.jsx  (Nova tela inicial)
-|   |   |   |   |-- ControleMensal/ControleMensal.jsx
-|   |   |   |   |-- ResumodeGastos/ (Pode ser o nome antigo do Dashboard ou um componente diferente)
-|   |   |   |-- /shared
-|   |   |   |   |-- Input.jsx
-|   |   |   |   |-- Label.jsx
-|   |   |   |   |-- Select.jsx
-|   |   |   |   |-- ModalRenda.jsx
-|   |   |   |   |-- ModalGasto.jsx
-|   |   |   |   |-- ModalMeta.jsx
-|   |   |-- /context
-|   |   |   |-- ProgressoContext.js
-|   |   |-- /styles
-|   |   |   |-- Projecao.module.css (Usado como referência para o CSS-in-JS)
-|   |   |   |-- (Outros .css ou .module.css se houver)
-|   |   |-- App.js
-|   |   |-- AppRoutes.jsx (Contém a configuração das rotas)
-|   |   |-- index.js
-|   |-- package.json
-|
-|-- /meu-app-backend  (Ou o nome que você deu à pasta do backend)
-|   |-- server.js         (Arquivo principal do servidor Express)
-|   |-- database.js       (Configuração do banco de dados SQLite e criação das tabelas)
-|   |-- finance_app.sqlite (Arquivo do banco de dados - gerado automaticamente)
-|   |-- package.json
-|   |-- node_modules/
-
+      
 ## 🚀 Configuração e Instalação
 
 ### Pré-requisitos
@@ -156,39 +110,39 @@ A aplicação React será aberta no seu navegador, geralmente em http://localhos
 Todas as rotas de dados financeiros são protegidas e requerem um token JWT no cabeçalho Authorization: Bearer <token>.
 
 Autenticação:
-    - POST /api/cadastro
-    - POST /api/login
-    - POST /api/solicitar-redefinicao
-    - POST /api/verificar-codigo-redefinicao
-    - POST /api/redefinir-senha
+    * POST /api/cadastro
+    * POST /api/login
+    * POST /api/solicitar-redefinicao
+    * POST /api/verificar-codigo-redefinicao
+    * POST /api/redefinir*senha
 
 Rendas:
-    -  GET /api/rendas
-    -  POST /api/rendas
-    -  PUT /api/rendas/:id
-    -  DELETE /api/rendas/:id
+    *  GET /api/rendas
+    *  POST /api/rendas
+    *  PUT /api/rendas/:id
+    *  DELETE /api/rendas/:id
 
 Gastos:
-    -  GET /api/gastos
-    -  POST /api/gastos
-    -  PUT /api/gastos/:id
-    -  DELETE /api/gastos/:id
+    *  GET /api/gastos
+    *  POST /api/gastos
+    *  PUT /api/gastos/:id
+    *  DELETE /api/gastos/:id
 
 Metas:
-    -  GET /api/metas
-    -  POST /api/metas
-    -  PUT /api/metas/:id
-    -  DELETE /api/metas/:id
+    *  GET /api/metas
+    *  POST /api/metas
+    *  PUT /api/metas/:id
+    *  DELETE /api/metas/:id
 
 Dados para Projeção e Dashboard:
-    -  GET /api/dados-completos-usuario: Retorna todas as rendas, gastos fixos e metas do usuário.
+    *  GET /api/dados-completos-usuario: Retorna todas as rendas, gastos fixos e metas do usuário.
 
 Controle Mensal (Registros Realizados):
-    -  GET /api/registros-mensais/:mes: Busca os registros de um mês específico.
-    -  GET /api/todos-registros-mensais: Busca todos os registros de todos os meses do usuário (usado pelo Dashboard).
-    -  POST /api/registros-mensais/:mes: Adiciona um novo registro realizado.
-    -  PUT /api/registros-mensais/:mes/:registroId: Atualiza um registro.
-    -  DELETE /api/registros-mensais/:mes/:registroId: Deleta um registro.
+    *  GET /api/registros-mensais/:mes: Busca os registros de um mês específico.
+    *  GET /api/todos-registros-mensais: Busca todos os registros de todos os meses do usuário (usado pelo Dashboard).
+    *  POST /api/registros-mensais/:mes: Adiciona um novo registro realizado.
+    *  PUT /api/registros-mensais/:mes/:registroId: Atualiza um registro.
+    *  DELETE /api/registros-mensais/:mes/:registroId: Deleta um registro.
 
 ## Licença
 
