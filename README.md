@@ -37,15 +37,15 @@ O Controla+ vai além de uma simples planilha de gastos. Ele oferece um fluxo gu
       * Visão "Planejado vs. Realizado" para o mês selecionado.
       * **Coluna "Planejado":** Lista as rendas, gastos fixos e parcelas de metas projetadas para o mês, com opção de "Registrar" cada item.
       * **Coluna "Realizado":**
-          * Cards de resumo com totais de receitas reais, gastos reais e gastos compulsivos do mês.
+          * Cards de resumo com totais de receitas, gastos e gastos compulsivos do mês.
           * Formulário para adicionar novos lançamentos (receitas ou gastos) não planejados.
           * **Tracking de Gastos Compulsivos:** Ao adicionar um novo gasto, o usuário pode marcá-lo como compulsivo e selecionar a emoção que o motivou.
-          * Listas separadas para "Receitas Reais", "Gastos Reais (Não Compulsivos)" e "Gastos Compulsivos", cada uma com opções de editar e excluir lançamentos.
+          * Listas separadas para "Receitas", "Gastos (Não Compulsivos)" e "Gastos Compulsivos", cada uma com opções de editar e excluir lançamentos.
       * **Restrição de Data:** O modal de adição/edição de lançamentos permite apenas datas dentro do mês selecionado.
       * **Alertas Contextuais e Feedback Positivo:**
           * Aviso se os gastos compulsivos estiverem muito altos.
-          * Sugestão para revisar o planejamento se os gastos reais superarem muito o projetado.
-          * Popup de parabéns com "confetes" (simulado) se houver uma redução significativa nos gastos compulsivos em relação ao mês anterior (aparece apenas uma vez por mês/ano para manter o efeito).
+          * Sugestão para revisar o planejamento se os gastos superarem muito o projetado.
+          * Popup de parabéns com "confetes" se houver uma redução significativa nos gastos compulsivos em relação ao mês anterior (aparece apenas uma vez por mês/ano para manter o efeito).
 
 ## 🛠️ Tecnologias Utilizadas
 
