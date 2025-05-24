@@ -110,11 +110,11 @@ A aplicação React será aberta no seu navegador, geralmente em http://localhos
 Todas as rotas de dados financeiros são protegidas e requerem um token JWT no cabeçalho Authorization: Bearer <token>.
 
 * Autenticação:
-    ** POST /api/cadastro
-    ** POST /api/login
-    ** POST /api/solicitar-redefinicao
-    ** POST /api/verificar-codigo-redefinicao
-    ** POST /api/redefinir-senha
+    * POST /api/cadastro
+    * POST /api/login
+    * POST /api/solicitar-redefinicao
+    * POST /api/verificar-codigo-redefinicao
+    * POST /api/redefinir-senha
 
 * Rendas:
     *  GET /api/rendas
@@ -122,22 +122,22 @@ Todas as rotas de dados financeiros são protegidas e requerem um token JWT no c
     *  PUT /api/rendas/:id
     *  DELETE /api/rendas/:id
 
-Gastos:
+* Gastos:
     *  GET /api/gastos
     *  POST /api/gastos
     *  PUT /api/gastos/:id
     *  DELETE /api/gastos/:id
 
-Metas:
+* Metas:
     *  GET /api/metas
     *  POST /api/metas
     *  PUT /api/metas/:id
     *  DELETE /api/metas/:id
 
-Dados para Projeção e Dashboard:
+* Dados para Projeção e Dashboard:
     *  GET /api/dados-completos-usuario: Retorna todas as rendas, gastos fixos e metas do usuário.
 
-Controle Mensal (Registros Realizados):
+* Controle Mensal (Registros Realizados):
     *  GET /api/registros-mensais/:mes: Busca os registros de um mês específico.
     *  GET /api/todos-registros-mensais: Busca todos os registros de todos os meses do usuário (usado pelo Dashboard).
     *  POST /api/registros-mensais/:mes: Adiciona um novo registro realizado.
