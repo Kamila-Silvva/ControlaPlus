@@ -1,13 +1,12 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProgressoContext } from "../../../context/ProgressoContext";
 import Input from "../../shared/Input";
 import Label from "../../shared/Label";
 import Select from "../../shared/Select";
-import ModalGasto from "../../shared/ModalGasto"; // Supondo que este modal existe
+import ModalGasto from "../../shared/ModalGasto";
 import styles from "../../../styles/Projecao.module.css";
 
-// Helper para chamadas API com token
 const getAuthHeaders = () => {
   const token = localStorage.getItem("userToken");
   return {
@@ -32,8 +31,8 @@ const GastosFixos = () => {
   const progressoContext = useContext(ProgressoContext);
   const etapas = progressoContext?.etapas;
   const etapaAtual = progressoContext?.etapaAtual;
+  const navegarParaEtapa = progressoContext?.navegarParaEtapa;
 
-  // Removido isCompulsivo do estado inicial do formulário
   const initialState = {
     descricao: "",
     valor: "",
@@ -45,7 +44,8 @@ const GastosFixos = () => {
   const [itens, setItens] = useState([]);
   const [itemEditando, setItemEditando] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
+  const [rendaTotalMensal, setRendaTotalMensal] = useState(0);
 
   const formatarMoeda = (valor) =>
     (valor || 0).toLocaleString("pt-BR", {
@@ -53,8 +53,37 @@ const GastosFixos = () => {
       currency: "BRL",
     });
 
+  const fetchRendaTotalMensal = useCallback(async () => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return 0;
+
+    try {
+      const response = await fetch("http://localhost:3001/api/rendas", {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        console.error(
+          "Erro ao buscar rendas para total:",
+          await response.json()
+        );
+        return 0;
+      }
+      const rendas = await response.json();
+      const totalMensal = rendas.reduce((sum, r) => {
+        if (r.frequencia === "Mensal") {
+          return sum + r.valor;
+        }
+        return sum;
+      }, 0);
+      setRendaTotalMensal(totalMensal);
+    } catch (err) {
+      console.error("Erro ao buscar renda total para GastosFixos:", err);
+      return 0;
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchGastos = async () => {
+    const fetchGastosAndRenda = async () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem("userToken");
@@ -65,6 +94,7 @@ const GastosFixos = () => {
         return;
       }
       try {
+        await fetchRendaTotalMensal();
         const response = await fetch("http://localhost:3001/api/gastos", {
           headers: getAuthHeaders(),
         });
@@ -89,8 +119,8 @@ const GastosFixos = () => {
         setLoading(false);
       }
     };
-    fetchGastos();
-  }, [navigate]);
+    fetchGastosAndRenda();
+  }, [navigate, fetchRendaTotalMensal]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -132,6 +162,7 @@ const GastosFixos = () => {
       setItens([...itens, data]);
       setForm(initialState);
       setError(null);
+      await fetchRendaTotalMensal();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -153,6 +184,7 @@ const GastosFixos = () => {
         }
         setItens(itens.filter((item) => item.id !== id));
         setError(null);
+        await fetchRendaTotalMensal();
       } catch (err) {
         setError(err.message);
       } finally {
@@ -204,6 +236,7 @@ const GastosFixos = () => {
       );
       setItemEditando(null);
       setError(null);
+      await fetchRendaTotalMensal();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -224,6 +257,15 @@ const GastosFixos = () => {
     acc[categoria].push(gasto);
     return acc;
   }, {});
+
+  const totalGastosFixosMensais = itens.reduce((sum, item) => {
+    if (item.frequencia === "Mensal") {
+      return sum + item.valor;
+    }
+    return sum;
+  }, 0);
+
+  const saldoDisponivelParaGastos = rendaTotalMensal - totalGastosFixosMensais;
 
   const componentStyles = {
     loadingContainer: {
@@ -255,10 +297,14 @@ const GastosFixos = () => {
         </p>
       </div>
 
-      {etapas && etapaAtual !== undefined && (
+      {etapas && etapaAtual !== undefined && navegarParaEtapa && (
         <div className={styles.barraProgresso}>
           {etapas.map((etapa, index) => (
-            <div key={index} className={styles.etapaContainer}>
+            <div
+              key={index}
+              className={styles.etapaContainer}
+              onClick={() => navegarParaEtapa(etapa)}
+            >
               <div
                 className={`${styles.marcadorEtapa} ${
                   index === etapaAtual
@@ -308,6 +354,41 @@ const GastosFixos = () => {
           </p>
         )}
 
+        <div className={styles["resumo-grid"]}>
+          <div className={styles["resumo-card"]}>
+            <h3 className={styles["resumo-card-title"]}>Receita Total Mensal:</h3>
+            <p
+              className={`${styles["resumo-card-value"]} ${styles.positivoSaldoProjecao}`}
+            >
+              {formatarMoeda(rendaTotalMensal)}
+            </p>
+          </div>
+          <div className={styles["resumo-card"]}>
+            <h3 className={styles["resumo-card-title"]}>
+              Total de Gastos Fixos (Mensais):
+            </h3>
+            <p
+              className={`${styles["resumo-card-value"]} ${styles.negativoSaldoProjecao}`}
+            >
+              {formatarMoeda(totalGastosFixosMensais)}
+            </p>
+          </div>
+          <div className={styles["resumo-card"]}>
+            <h3 className={styles["resumo-card-title"]}>
+              Saldo Disponível para Outros Gastos/Metas:
+            </h3>
+            <p
+              className={`${styles["resumo-card-value"]} ${
+                saldoDisponivelParaGastos >= 0
+                  ? styles.positivoSaldoProjecao
+                  : styles.negativoSaldoProjecao
+              }`}
+            >
+              {formatarMoeda(saldoDisponivelParaGastos)}
+            </p>
+          </div>
+        </div>
+
         <div className={styles["grupo-campos"]}>
           <div className={styles["campo-formulario"]}>
             <Label>Descrição*</Label>
@@ -356,7 +437,6 @@ const GastosFixos = () => {
               disabled={loading}
             >
               <option value="Mensal">Mensal</option>
-              {/* ADICIONADO DE VOLTA */}
               <option value="Trimestral">Trimestral</option>
               <option value="Semestral">Semestral</option>
               <option value="Anual">Anual</option>

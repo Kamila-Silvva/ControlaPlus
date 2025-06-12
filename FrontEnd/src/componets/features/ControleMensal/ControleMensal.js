@@ -52,7 +52,6 @@ const formatarDataParaExibicao = (dataString) => {
   return `${dia}/${mesNum}/${ano}`;
 };
 
-// --- NOVO SUB-COMPONENTE: POPUP DE PARABÉNS ---
 const PopupParabens = ({ onClose }) => {
   return (
     <div style={styles.confettiOverlay} onClick={onClose}>
@@ -86,7 +85,6 @@ const PopupParabens = ({ onClose }) => {
   );
 };
 
-// --- COMPONENTE PRINCIPAL ---
 const ControleMensal = () => {
   const { mes: mesParam } = useParams();
   const navigate = useNavigate();
@@ -107,6 +105,13 @@ const ControleMensal = () => {
     if (!mesParam) return "";
     return mesParam.charAt(0).toUpperCase() + mesParam.slice(1);
   }, [mesParam]);
+
+
+  const formatarMoeda = useCallback((valor) =>
+    (valor || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }), []); 
 
   const calcularResumos = (realizadosAtuais, planejadosAtuais) => {
     const receitasReais = (realizadosAtuais || [])
@@ -178,7 +183,6 @@ const ControleMensal = () => {
             setMostrarPopupParabens(true);
             localStorage.setItem(chaveParabensLocalStorage, "true");
           } else {
-            // Adiciona uma mensagem mais sutil se o popup já foi visto este mês/ano
             novasMensagens.push({
               id: "manutencaoCompulsivo",
               tipo: "avisoSucessoContinuo",
@@ -191,7 +195,7 @@ const ControleMensal = () => {
       setMensagensContextuais(novasMensagens);
     },
     []
-  ); // setMostrarPopupParabens é estável
+  );
 
   const fetchDadosControleMensal = useCallback(async () => {
     if (!mesParam) {
@@ -309,28 +313,33 @@ const ControleMensal = () => {
           tipoOriginal: "gasto",
         }));
 
-      const metasPlanejadas = metasInvestimentos.map((m) => ({
-        id: m.id,
-        displayId: `meta-${m.id}`,
-        descricao: `Meta: ${m.descricao}`,
-        valor: m.valorTotal && m.prazoMeses ? m.valorTotal / m.prazoMeses : 0,
-        categoria: "Metas",
-        isMeta: true,
-        tipoOriginal: "gasto",
-        frequencia: "Mensal",
-        valorTotal: m.valorTotal,
-        prazoMeses: m.prazoMeses,
-      }));
+      const indiceMesAtualControle = MESES_NOMES.indexOf(nomeMesFormatado);
+      const metasPlanejadasAtivasNoMes = metasInvestimentos
+        .filter((m) => {
+          return indiceMesAtualControle !== -1 && indiceMesAtualControle < m.prazoMeses;
+        })
+        .map((m) => ({
+          id: m.id,
+          displayId: `meta-${m.id}`,
+          descricao: `Meta: ${m.descricao}`,
+          valor: m.valorTotal && m.prazoMeses ? m.valorTotal / m.prazoMeses : 0,
+          categoria: "Metas",
+          isMeta: true,
+          tipoOriginal: "gasto", 
+          frequencia: "Mensal (Projeção)",
+          valorTotal: m.valorTotal,
+          prazoMeses: m.prazoMeses,
+        }))
 
       setPlanejados({
         receitas: receitasPlanejadas,
-        gastos: [...gastosPlanejados, ...metasPlanejadas],
+        gastos: [...gastosPlanejados, ...metasPlanejadasAtivasNoMes], // Usar metas filtradas
       });
       setRealizados(realizadosData);
 
       const resumosCalculados = calcularResumos(realizadosData, {
         receitas: receitasPlanejadas,
-        gastos: [...gastosPlanejados, ...metasPlanejadas],
+        gastos: [...gastosPlanejados, ...metasPlanejadasAtivasNoMes], // Usar metas filtradas
       });
       gerarAlertasContextuais(
         resumosCalculados,
@@ -348,7 +357,7 @@ const ControleMensal = () => {
     } finally {
       setLoading(false);
     }
-  }, [mesParam, navigate, nomeMesFormatado, gerarAlertasContextuais]); // Adicionado gerarAlertasContextuais
+  }, [mesParam, navigate, nomeMesFormatado, gerarAlertasContextuais]);
 
   useEffect(() => {
     fetchDadosControleMensal();
@@ -479,11 +488,6 @@ const ControleMensal = () => {
     }
   };
 
-  const formatarMoeda = (valor) =>
-    (valor || 0).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
 
   if (
     loading &&
@@ -602,6 +606,7 @@ const ControleMensal = () => {
         onRegistrar={(item) => abrirModal("registrar", item)}
         loading={loading}
         itemIdentifier="displayId"
+        formatarMoeda={formatarMoeda} 
       />
       <TabelaItens
         titulo="Receitas"
@@ -613,6 +618,7 @@ const ControleMensal = () => {
         onRemove={handleRemoverLancamento}
         loading={loading}
         formatarDataParaExibicao={formatarDataParaExibicao}
+        formatarMoeda={formatarMoeda}
       />
       <TabelaItens
         titulo="Gastos"
@@ -624,6 +630,7 @@ const ControleMensal = () => {
         onRemove={handleRemoverLancamento}
         loading={loading}
         formatarDataParaExibicao={formatarDataParaExibicao}
+        formatarMoeda={formatarMoeda} 
       />
       <TabelaItens
         titulo="Gastos Compulsivos"
@@ -634,6 +641,7 @@ const ControleMensal = () => {
         onRemove={handleRemoverLancamento}
         loading={loading}
         formatarDataParaExibicao={formatarDataParaExibicao}
+        formatarMoeda={formatarMoeda} 
       />
 
       {modalState.isOpen && (
@@ -664,6 +672,7 @@ function ResumoCard({ label, value, isPositive, isNegative }) {
   );
 }
 
+
 function TabelaItens({
   titulo,
   itens,
@@ -676,13 +685,9 @@ function TabelaItens({
   onRemove,
   loading,
   formatarDataParaExibicao,
+  formatarMoeda, 
   itemIdentifier = "id",
 }) {
-  const formatarMoeda = (valor) =>
-    (valor || 0).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
   return (
     <div style={styles.tableContainer}>
       <div
@@ -735,7 +740,7 @@ function TabelaItens({
                   {colunas.includes("Categoria") && (
                     <td style={styles.td}>{item.categoria || "N/A"}</td>
                   )}
-                  <td style={styles.td}>{formatarMoeda(item.valor)}</td>
+                  <td style={styles.td}>{formatarMoeda(item.valor)}</td> 
                   {colunas.includes("Emoção") && (
                     <td style={styles.td}>{item.emocao}</td>
                   )}
@@ -1348,7 +1353,7 @@ if (!document.getElementById("app-styles-global")) {
   const styleSheet = document.createElement("style");
   styleSheet.id = "app-styles-global";
   styleSheet.innerText = `
-      :root { 
+      :root {
         --roxo-principal: #9747FF; --roxo-escuro: #6C63FF; --roxo-claro: #a855f7;
         --cinza-escuro: #2F2E41; --cinza-medio: #0D0C0B; --cinza-claro: #F5F5F5;
         --branco: #FFFFFF; --sombra: 0 4px 6px rgba(0, 0, 0, 0.05);

@@ -1,9 +1,8 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProgressoContext } from "../../../context/ProgressoContext";
-import ModalMeta from "../../shared/ModalMeta"; 
-import styles from "../../../styles/Projecao.module.css"; 
-
+import ModalMeta from "../../shared/ModalMeta";
+import styles from "../../../styles/Projecao.module.css";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("userToken");
@@ -18,18 +17,21 @@ const MetasInvestimentos = () => {
   const progressoContext = useContext(ProgressoContext);
   const etapas = progressoContext?.etapas;
   const etapaAtual = progressoContext?.etapaAtual;
+  const navegarParaEtapa = progressoContext?.navegarParaEtapa;
 
   const initialState = {
     descricao: "",
     valorTotal: "",
     tipo: "Meta",
     prazoMeses: "1",
-  }; 
+  };
   const [form, setForm] = useState(initialState);
   const [metas, setMetas] = useState([]);
   const [itemEditando, setItemEditando] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
+  const [rendaTotalMensal, setRendaTotalMensal] = useState(0);
+  const [gastosFixosTotaisMensais, setGastosFixosTotaisMensais] = useState(0);
 
   const formatarMoeda = (valor) =>
     (valor || 0).toLocaleString("pt-BR", {
@@ -37,8 +39,68 @@ const MetasInvestimentos = () => {
       currency: "BRL",
     });
 
+  const fetchRendaTotalMensal = useCallback(async () => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return 0;
+
+    try {
+      const response = await fetch("http://localhost:3001/api/rendas", {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        console.error(
+          "Erro ao buscar rendas para total em Metas:",
+          await response.json()
+        );
+        return 0;
+      }
+      const rendas = await response.json();
+      const totalMensal = rendas.reduce((sum, r) => {
+        if (r.frequencia === "Mensal") {
+          return sum + r.valor;
+        }
+        return sum;
+      }, 0);
+      setRendaTotalMensal(totalMensal);
+      return totalMensal;
+    } catch (err) {
+      console.error("Erro ao buscar renda total para Metas:", err);
+      return 0;
+    }
+  }, []);
+
+  const fetchGastosFixosTotaisMensais = useCallback(async () => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return 0;
+
+    try {
+      const response = await fetch("http://localhost:3001/api/gastos", {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        console.error(
+          "Erro ao buscar gastos para total em Metas:",
+          await response.json()
+        );
+        return 0;
+      }
+      const gastos = await response.json();
+      const totalMensal = gastos.reduce((sum, g) => {
+        if (g.frequencia === "Mensal") {
+          return sum + g.valor;
+        }
+        return sum;
+      }, 0);
+      setGastosFixosTotaisMensais(totalMensal);
+      return totalMensal;
+    } catch (err) {
+      console.error("Erro ao buscar gastos fixos totais para Metas:", err);
+      return 0;
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchMetas = async () => {
+    const fetchMetasAndTotals = async () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem("userToken");
@@ -49,6 +111,9 @@ const MetasInvestimentos = () => {
         return;
       }
       try {
+        await fetchRendaTotalMensal();
+        await fetchGastosFixosTotaisMensais();
+
         const response = await fetch("http://localhost:3001/api/metas", {
           headers: getAuthHeaders(),
         });
@@ -80,8 +145,8 @@ const MetasInvestimentos = () => {
         setLoading(false);
       }
     };
-    fetchMetas();
-  }, [navigate]);
+    fetchMetasAndTotals();
+  }, [navigate, fetchRendaTotalMensal, fetchGastosFixosTotaisMensais]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,12 +155,21 @@ const MetasInvestimentos = () => {
     if (error) setError(null);
   };
 
+  const totalMetasMensaisExistentes = metas.reduce((sum, meta) => {
+    return sum + (meta.valorParcela || 0);
+  }, 0);
+
+  const totalDespesasMensais =
+    gastosFixosTotaisMensais + totalMetasMensaisExistentes;
+
+  const saldoLiquidoMensal = rendaTotalMensal - totalDespesasMensais;
+
   const adicionarMeta = async () => {
     if (!form.descricao.trim()) {
       setError("Insira uma descrição válida");
       return;
     }
-    const valorNum = parseFloat(form.valorTotal); 
+    const valorNum = parseFloat(form.valorTotal);
     const prazoNum = parseInt(form.prazoMeses, 10);
     if (isNaN(valorNum) || valorNum <= 0) {
       setError("O valor total deve ser um número positivo");
@@ -103,6 +177,17 @@ const MetasInvestimentos = () => {
     }
     if (isNaN(prazoNum) || prazoNum <= 0) {
       setError("O prazo deve ser um número inteiro e positivo");
+      return;
+    }
+
+    const valorParcelaMensalNovaMeta = valorNum / prazoNum;
+
+    if (valorParcelaMensalNovaMeta > saldoLiquidoMensal) {
+      setError(
+        `A parcela mensal desta nova meta (${formatarMoeda(
+          valorParcelaMensalNovaMeta
+        )}) excede o saldo disponível (${formatarMoeda(saldoLiquidoMensal)}).`
+      );
       return;
     }
 
@@ -121,7 +206,10 @@ const MetasInvestimentos = () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Erro ao criar meta.");
-      setMetas([...metas, data]); 
+      setMetas([
+        ...metas,
+        { ...data, valorParcela: data.valorTotal / data.prazoMeses },
+      ]);
       setForm(initialState);
       setError(null);
     } catch (err) {
@@ -160,8 +248,8 @@ const MetasInvestimentos = () => {
   const editarItem = (item) => {
     setItemEditando({
       ...item,
-      valorTotal: item.valorTotal.toString(), 
-      prazoMeses: item.prazoMeses.toString(), 
+      valorTotal: item.valorTotal.toString(),
+      prazoMeses: item.prazoMeses.toString(),
     });
   };
 
@@ -170,16 +258,36 @@ const MetasInvestimentos = () => {
     const prazoNum = parseInt(dadosEditadosModal.prazoMeses, 10);
 
     if (isNaN(valorNum) || valorNum <= 0) {
-      setError("O valor para edição é inválido.");
-      return;
+      throw new Error("O valor para edição é inválido e deve ser positivo.");
     }
     if (isNaN(prazoNum) || prazoNum <= 0) {
-      setError("O prazo para edição é inválido.");
-      return;
+      throw new Error(
+        "O prazo para edição é inválido e deve ser um número inteiro positivo."
+      );
+    }
+
+    const valorParcelaMensalEditada = valorNum / prazoNum;
+
+    const metaAntiga = metas.find((m) => m.id === dadosEditadosModal.id);
+    const parcelaAntiga = metaAntiga
+      ? metaAntiga.valorTotal / metaAntiga.prazoMeses
+      : 0;
+
+    const saldoAjustadoParaValidacaoDaEdicao =
+      saldoLiquidoMensal + parcelaAntiga;
+
+    if (valorParcelaMensalEditada > saldoAjustadoParaValidacaoDaEdicao) {
+      throw new Error(
+        `A nova parcela mensal (${formatarMoeda(
+          valorParcelaMensalEditada
+        )}) excede o saldo disponível para metas (${formatarMoeda(
+          saldoAjustadoParaValidacaoDaEdicao
+        )}).`
+      );
     }
 
     const payload = {
-      id: dadosEditadosModal.id, 
+      id: dadosEditadosModal.id,
       descricao: dadosEditadosModal.descricao,
       valorTotal: valorNum,
       tipo: dadosEditadosModal.tipo,
@@ -198,11 +306,19 @@ const MetasInvestimentos = () => {
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.message || "Erro ao atualizar meta.");
-      setMetas(metas.map((m) => (m.id === dadosEditadosModal.id ? data : m)));
+
+      setMetas(
+        metas.map((m) =>
+          m.id === dadosEditadosModal.id
+            ? { ...data, valorParcela: data.valorTotal / data.prazoMeses }
+            : m
+        )
+      );
       setItemEditando(null);
       setError(null);
     } catch (err) {
       setError(err.message);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -243,10 +359,14 @@ const MetasInvestimentos = () => {
           Defina seus objetivos financeiros de curto, médio e longo prazo.
         </p>
       </div>
-      {etapas && etapaAtual !== undefined && (
+      {etapas && etapaAtual !== undefined && navegarParaEtapa && (
         <div className={styles.barraProgresso}>
           {etapas.map((etapa, index) => (
-            <div key={index} className={styles.etapaContainer}>
+            <div
+              key={index}
+              className={styles.etapaContainer}
+              onClick={() => navegarParaEtapa(etapa)}
+            >
               <div
                 className={`${styles.marcadorEtapa} ${
                   index === etapaAtual
@@ -276,14 +396,11 @@ const MetasInvestimentos = () => {
       >
         <h3 className={styles["titulo-secao"]}>Minhas Metas e Investimentos</h3>
         {error && (
-          <div className={styles["error-message"]}>
-            {error}
-            <button
-              onClick={() => setError(null)}
-              className={styles["fechar-erro"]}
-            >
-              ×
-            </button>
+          <div
+            className={`${styles.alerta} ${styles["saldo-negativo-projecao"]}`}
+            style={{ marginBottom: "1rem" }}
+          >
+            <p className={styles["alerta-text"]}>⚠️ {error}</p>
           </div>
         )}
         {loading && metas.length > 0 && (
@@ -297,6 +414,44 @@ const MetasInvestimentos = () => {
             Processando...
           </p>
         )}
+
+        <div className={styles["resumo-grid"]}>
+          <div className={styles["resumo-card"]}>
+            <h3 className={styles["resumo-card-title"]}>
+              Receita Total Mensal:
+            </h3>
+            <p
+              className={`${styles["resumo-card-value"]} ${styles.positivoSaldoProjecao}`}
+            >
+              {formatarMoeda(rendaTotalMensal)}
+            </p>
+          </div>
+          <div className={styles["resumo-card"]}>
+            <h3 className={styles["resumo-card-title"]}>
+              Total de Despesas (Mensais):
+            </h3>{" "}
+
+            <p
+              className={`${styles["resumo-card-value"]} ${styles.negativoSaldoProjecao}`}
+            >
+              {formatarMoeda(totalDespesasMensais)}
+            </p>
+          </div>
+          <div className={styles["resumo-card"]}>
+            <h3 className={styles["resumo-card-title"]}>
+              Saldo Líquido Mensal:
+            </h3>
+            <p
+              className={`${styles["resumo-card-value"]} ${
+                saldoLiquidoMensal >= 0
+                  ? styles.positivoSaldoProjecao
+                  : styles.negativoSaldoProjecao
+              }`}
+            >
+              {formatarMoeda(saldoLiquidoMensal)}
+            </p>
+          </div>
+        </div>
 
         <div className={styles["grupo-campos"]}>
           <div className={styles["campo-formulario"]}>

@@ -1,13 +1,13 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProgressoContext } from "../../../context/ProgressoContext";
-import Input from "../../shared/Input"; // Supondo que você tenha esses componentes
+import Input from "../../shared/Input"; 
 import Label from "../../shared/Label";
 import Select from "../../shared/Select";
-import ModalEdicao from "../../shared/ModalRenda"; // Supondo que você tenha este modal
-import styles from "../../../styles/Projecao.module.css"; // Reutilizando estilos se aplicável
+import ModalEdicao from "../../shared/ModalRenda"; 
+import styles from "../../../styles/Projecao.module.css"; 
 
-// Helper para chamadas API com token
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem("userToken");
   return {
@@ -18,10 +18,11 @@ const getAuthHeaders = () => {
 
 const Renda = () => {
   const navigate = useNavigate();
-  // Se ProgressoContext não for usado aqui, pode remover estas duas linhas
+
   const progressoContext = useContext(ProgressoContext);
   const etapas = progressoContext?.etapas;
   const etapaAtual = progressoContext?.etapaAtual;
+  const navegarParaEtapa = progressoContext?.navegarParaEtapa;
 
   const [form, setForm] = useState({
     descricao: "",
@@ -63,16 +64,16 @@ const Renda = () => {
             navigate("/login");
             throw new Error("Sessão expirada. Faça login novamente.");
           }
-          const data = await response.json().catch(() => ({})); // Tenta pegar JSON, senão objeto vazio
+          const data = await response.json().catch(() => ({})); 
           throw new Error(
-            data.message || `Erro ao buscar rendas: ${response.statusText}`
+            data.message || `Erro ao buscar receitas: ${response.statusText}` 
           );
         }
         const data = await response.json();
         setItens(data);
       } catch (err) {
         setError(err.message);
-        console.error("Erro ao buscar rendas:", err);
+        console.error("Erro ao buscar receitas:", err); 
       } finally {
         setLoading(false);
       }
@@ -102,6 +103,7 @@ const Renda = () => {
     }
 
     const novaRendaPayload = {
+
       descricao: form.descricao,
       valor: valorNum,
       frequencia: form.frequencia,
@@ -116,7 +118,8 @@ const Renda = () => {
         body: JSON.stringify(novaRendaPayload),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Erro ao criar renda.");
+      if (!response.ok)
+        throw new Error(data.message || "Erro ao criar receita.");
 
       setItens([...itens, data]);
       setForm({
@@ -143,7 +146,7 @@ const Renda = () => {
         });
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          throw new Error(data.message || "Erro ao remover renda.");
+          throw new Error(data.message || "Erro ao remover receita."); 
         }
         setItens(itens.filter((item) => item.id !== id));
         setError(null);
@@ -191,7 +194,7 @@ const Renda = () => {
       );
       const data = await response.json();
       if (!response.ok)
-        throw new Error(data.message || "Erro ao atualizar renda.");
+        throw new Error(data.message || "Erro ao atualizar receita.");
 
       setItens(
         itens.map((item) => (item.id === dadosEditados.id ? data : item))
@@ -207,15 +210,15 @@ const Renda = () => {
 
   const avancarEtapa = () => {
     if (itens.length === 0 && !error) {
-      setError("Adicione pelo menos um item de renda antes de avançar.");
+      setError("Adicione pelo menos um item de receita antes de avançar.");
       return;
     }
     navigate("/gastos-fixos");
   };
 
   if (loading && itens.length === 0) {
-    // Mostra loading apenas no carregamento inicial
-    return <div style={styles.loadingContainer}>Carregando rendas...</div>;
+   
+    return <div style={styles.loadingContainer}>Carregando receitas...</div>;
   }
 
   return (
@@ -224,42 +227,50 @@ const Renda = () => {
         <h1 className={styles.tituloApp}>
           Controla<span className={styles.destaqueTitulo}>+</span>
         </h1>
-        <h2 className={styles.subtitulo}>Planejamento de Renda</h2>
+        <h2 className={styles.subtitulo}>Planejamento de Receita</h2>{" "}
+        {/* Atualizado */}
         <p className={styles.textoDescritivo}>
-          Informe suas fontes de renda, como salários, bônus ou rendimentos
-          extras.
+          Informe suas fontes de receitas, como salários, bônus ou rendimentos
+          extras. {/* Atualizado */}
         </p>
       </div>
 
-      {etapas && etapaAtual !== undefined && (
-        <div className={styles.barraProgresso}>
-          {etapas.map((etapa, index) => (
-            <div key={index} className={styles.etapaContainer}>
+      {etapas &&
+        etapaAtual !== undefined &&
+        navegarParaEtapa && ( 
+          <div className={styles.barraProgresso}>
+            {etapas.map((etapa, index) => (
               <div
-                className={`${styles.marcadorEtapa} ${
-                  index === etapaAtual
-                    ? styles["etapa-ativa"]
-                    : styles["etapa-inativa"]
-                }`}
+                key={index}
+                className={styles.etapaContainer}
+                onClick={() => navegarParaEtapa(etapa)} 
               >
-                {index + 1}
+                <div
+                  className={`${styles.marcadorEtapa} ${
+                    index === etapaAtual
+                      ? styles["etapa-ativa"]
+                      : styles["etapa-inativa"]
+                  }`}
+                >
+                  {index + 1}
+                </div>
+                <span
+                  className={`${styles["rotulo-etapa"]} ${
+                    index === etapaAtual
+                      ? styles["rotulo-ativo"]
+                      : styles["rotulo-inativo"]
+                  }`}
+                >
+                  {etapa}
+                </span>
               </div>
-              <span
-                className={`${styles["rotulo-etapa"]} ${
-                  index === etapaAtual
-                    ? styles["rotulo-ativo"]
-                    : styles["rotulo-inativo"]
-                }`}
-              >
-                {etapa}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
       <div className={styles["formulario-container"]}>
-        <h3 className={styles["titulo-secao"]}>Minhas Rendas</h3>
+        <h3 className={styles["titulo-secao"]}>Minhas Receitas</h3>{" "}
+        {/* Atualizado */}
         {error && (
           <div className={styles["error-message"]}>
             {" "}
@@ -317,7 +328,6 @@ const Renda = () => {
               disabled={loading}
             >
               <option value="Mensal">Mensal</option>
-              {/* ADICIONADO DE VOLTA */}
               <option value="Trimestral">Trimestral</option>
               <option value="Semestral">Semestral</option>
               <option value="Anual">Anual</option>
@@ -360,13 +370,14 @@ const Renda = () => {
             className={styles["botao-adicionar"]}
             disabled={loading}
           >
-            {loading ? "Adicionando..." : "Adicionar Renda"}
+            {loading ? "Adicionando..." : "Adicionar Receita"}{" "}
+            {/* Atualizado */}
           </button>
         </div>
         {itens.length > 0 && (
           <div className={styles["lista-container"]}>
             <h4 className={styles["titulo-lista"]}>
-              Minhas Rendas Registradas
+              Minhas Receitas Registradas {/* Atualizado */}
             </h4>
             <div className={styles["itens-lista"]}>
               {itens.map((item) => (

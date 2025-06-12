@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ProgressoContext } from "../../../context/ProgressoContext";
 import styles from "../../../styles/Projecao.module.css";
 
-// Helper para chamadas API com token
 const getAuthHeaders = () => {
   const token = localStorage.getItem("userToken");
   return {
@@ -142,9 +141,11 @@ const PopupAjuste = ({
 
 const Projecao = () => {
   const navigate = useNavigate();
+  // Desestruturar navegarParaEtapa do contexto
   const progressoContext = useContext(ProgressoContext);
   const etapas = progressoContext?.etapas;
   const etapaAtual = progressoContext?.etapaAtual;
+  const navegarParaEtapa = progressoContext?.navegarParaEtapa;
 
   const [projecao, setProjecao] = useState([]);
   const [mesExpandido, setMesExpandido] = useState(null);
@@ -300,14 +301,11 @@ const Projecao = () => {
               return false;
             });
 
-            // Filtra as metas para incluir APENAS as que estão ativas no mês corrente
             const metasAtivasNoMes = metasInvestimentos.filter((meta) => {
-              // Uma meta é "ativa" no mês atual se o índice do mês
-              // for menor que o seu prazo em meses.
+
               return indiceMesAtualDaProjecao < meta.prazoMeses;
             });
 
-            // Mapeia as metas ativas no mês para o formato de gasto
             const metasComoGastosNoMes = metasAtivasNoMes.map((meta) => ({
               id: `meta-${meta.id}`,
               originalId: meta.id,
@@ -316,8 +314,8 @@ const Projecao = () => {
                 meta.valorTotal && meta.prazoMeses
                   ? meta.valorTotal / meta.prazoMeses
                   : 0,
-              frequencia: "Mensal (Projeção)", // Apenas para exibição detalhada
-              isMeta: true, // Adiciona esta flag para fácil identificação
+              frequencia: "Mensal (Projeção)", 
+              isMeta: true,
               categoria: "Metas",
               valorTotal: meta.valorTotal,
               prazoMeses: meta.prazoMeses,
@@ -332,7 +330,6 @@ const Projecao = () => {
               0
             );
 
-            // Agora, totalMetasParcelas só inclui as parcelas das metas ativas para o MÊS ATUAL
             const totalMetasParcelas = metasComoGastosNoMes.reduce(
               (sum, meta) => sum + (meta.valor || 0),
               0
@@ -349,7 +346,7 @@ const Projecao = () => {
               recebimentosDetalhados: recebimentosDoMesProjetado,
               gastosDetalhados: [
                 ...gastosFixosDoMesProjetado,
-                ...metasComoGastosNoMes, // ESSA LISTA AGORA SÓ CONTÉM AS METAS ATIVAS NO MÊS
+                ...metasComoGastosNoMes, 
               ],
             };
           }
@@ -527,32 +524,38 @@ const Projecao = () => {
           Visualize sua saúde financeira ao longo dos próximos 12 meses.
         </p>
       </div>
-      {etapas && etapaAtual !== undefined && (
-        <div className={styles.barraProgresso}>
-          {etapas.map((etapa, index) => (
-            <div key={index} className={styles.etapaContainer}>
+      {etapas &&
+        etapaAtual !== undefined &&
+        navegarParaEtapa && ( 
+          <div className={styles.barraProgresso}>
+            {etapas.map((etapa, index) => (
               <div
-                className={`${styles.marcadorEtapa} ${
-                  index === etapaAtual
-                    ? styles["etapa-ativa"]
-                    : styles["etapa-inativa"]
-                }`}
+                key={index}
+                className={styles.etapaContainer}
+                onClick={() => navegarParaEtapa(etapa)}
               >
-                {index + 1}
+                <div
+                  className={`${styles.marcadorEtapa} ${
+                    index === etapaAtual
+                      ? styles["etapa-ativa"]
+                      : styles["etapa-inativa"]
+                  }`}
+                >
+                  {index + 1}
+                </div>
+                <span
+                  className={`${styles["rotulo-etapa"]} ${
+                    index === etapaAtual
+                      ? styles["rotulo-ativo"]
+                      : styles["rotulo-inativo"]
+                  }`}
+                >
+                  {etapa}
+                </span>
               </div>
-              <span
-                className={`${styles["rotulo-etapa"]} ${
-                  index === etapaAtual
-                    ? styles["rotulo-ativo"]
-                    : styles["rotulo-inativo"]
-                }`}
-              >
-                {etapa}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
       {alertas.length > 0 && (
         <div className={styles["alertas-container"]}>
@@ -708,7 +711,7 @@ const Projecao = () => {
                                     >
                                       <div className={styles["detail-info"]}>
                                         <span>{gasto.descricao}</span>
-                                        {/* Condição ajustada: só exibe detalhes de frequência se NÃO for uma meta */}
+                                        
                                         {gasto.frequencia &&
                                           !gasto.isMeta &&
                                           gasto.frequencia !== "Mensal" && (
