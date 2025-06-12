@@ -11,29 +11,32 @@ function Cadastro() {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const styleElement = document.createElement("style");
-    styleElement.id = 'cadastro-specific-styles'; 
+    styleElement.id = 'cadastro-specific-styles';
     styleElement.innerHTML = `
-      .login-container-global { 
-        padding: 20px;
+      /* Estilos globais para o container e body para este componente */
+      .login-container-global {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 100%; 
+        width: 100%;
+        min-height: 100vh; /* Garante que o container ocupe a altura total da viewport */
+        padding: 20px; /* Adiciona um padding externo para evitar que o card grude nas bordas */
+        box-sizing: border-box; /* Garante que o padding não adicione largura extra */
       }
-      
-      .login-body-override { 
+
+      .login-body-override {
         font-family: 'Public Sans', sans-serif;
         background: linear-gradient(180deg, #9747FF 0%, #BCA2F2 77%, #F9F9F9 99%) !important;
         min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 0; 
+        display: flex; /* Garante que o body possa centralizar o container */
+        justify-content: center; /* Centraliza horizontalmente */
+        align-items: center; /* Centraliza verticalmente */
+        margin: 0;
       }
     `;
     if (!document.getElementById('cadastro-specific-styles')) {
@@ -53,7 +56,7 @@ function Cadastro() {
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData({ ...formData, [id]: value });
-    if (error) setError(""); 
+    if (error) setError("");
     if (success) setSuccess(false);
   };
 
@@ -97,7 +100,7 @@ function Cadastro() {
       if (response.ok) {
         setSuccess(true);
         setFormData({ nome: "", email: "", confirmEmail: "", senha: "", confirmSenha: "" });
-        setTimeout(() => navigate("/login"), 2000); 
+        setTimeout(() => navigate("/login"), 2000);
       } else {
         setError(data.message || "Erro ao cadastrar. Tente novamente.");
       }
@@ -114,7 +117,7 @@ function Cadastro() {
       <div style={styles.loginCard}>
         <h1 style={styles.logo}>Controla+</h1>
 
-        {/* ATUALIZADO: Container para mensagens com altura mínima */}
+        {/* Container para mensagens com altura mínima */}
         <div style={styles.messageContainer}>
           {error && <p style={styles.errorMessage}>{error}</p>}
           {success && (
@@ -200,20 +203,25 @@ function Cadastro() {
   );
 }
 
-
+// =========================================================================
+// NOVOS ESTILOS REFEITOS - FOCO TOTAL NA LARGURA EXATA (COMO FOTO 1)
+// =========================================================================
 const styles = {
   loginContainer: {
-    width: "100%",
+    // Estilos já tratados pelo CSS global injetado no useEffect
   },
   loginCard: {
-    width: "100%",
-    maxWidth: "650px",
+    // Definindo uma largura exata para o card para ter controle total
+    width: "430px", // Experimente 700px, 750px, 800px para a largura total do card
     background: "#F9F9F9",
     boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.25)",
     borderRadius: "30px",
-    padding: "60px 90px", 
+    // Reduzindo o padding lateral do card. Isso vai dar MAIS espaço para os inputs.
+    // O padding superior/inferior é para o espaçamento do logo e do link inferior.
+    padding: "60px 40px", // 60px vertical, 40px horizontal
     textAlign: "center",
-    margin: "0 auto",
+    margin: "0 auto", // Centraliza o card
+    boxSizing: "border-box", // Garante que padding e borda não aumentem a largura total
   },
   logo: {
     fontFamily: "'Kalnia', serif",
@@ -225,39 +233,47 @@ const styles = {
 
   messageContainer: {
     marginBottom: "20px",
-    display: 'flex', 
+    display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    // minHeight: '50px', // Altura mínima para mensagens
+    width: '100%', // Ocupa toda a largura disponível
+    boxSizing: "border-box",
   },
   errorMessage: {
     color: "#ff3333",
     textAlign: "center",
     fontSize: "14px",
-    backgroundColor: "rgba(220, 53, 69, 0.1)", 
-    padding: "10px", 
-    borderRadius: "8px", 
-    border: "1px solid rgba(220, 53, 69, 0.2)", 
-    width: '100%', 
+    backgroundColor: "rgba(220, 53, 69, 0.1)",
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid rgba(220, 53, 69, 0.2)",
+    width: '100%',
+    boxSizing: "border-box",
   },
   successMessage: {
     color: "#4BB543",
     textAlign: "center",
-    // marginBottom: "20px", // Removido
     fontSize: "14px",
-    backgroundColor: "rgba(40, 167, 69, 0.1)", 
-    padding: "10px", 
-    borderRadius: "8px", 
-    border: "1px solid rgba(40, 167, 69, 0.2)", 
-    width: '100%', 
+    backgroundColor: "rgba(40, 167, 69, 0.1)",
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid rgba(40, 167, 69, 0.2)",
+    width: '100%',
+    boxSizing: "border-box",
   },
   loginForm: {
     display: "flex",
     flexDirection: "column",
     gap: "25px",
+    width: "100%", // O formulário ocupará 100% da largura DISPONÍVEL dentro do card
+    boxSizing: "border-box",
   },
   formGroup: {
     position: "relative",
     textAlign: "left",
+    width: "100%", // Cada grupo de input ocupará 100% da largura do formulário
+    boxSizing: "border-box",
   },
   label: {
     display: "block",
@@ -266,15 +282,18 @@ const styles = {
     color: "#0D0C0B",
   },
   formInput: {
-    width: "100%",
+    width: "100%", // O input ocupará 100% da largura do seu formGroup
     height: "57px",
-    background: "#F9F9F9", 
+    background: "#F9F9F9",
     border: "1px solid #0D0C0B",
     borderRadius: "10px",
-    padding: "0 25px",
+    // Padding interno do input para o texto. Ajuste este valor se o placeholder for cortado
+    // ou se quiser mais/menos "respiro" entre o texto e a borda interna do input.
+    padding: "0 25px", // Este padding é que controla o espaço do texto dentro do input
     fontSize: "16px",
     fontFamily: "'Public Sans', sans-serif",
-    marginBottom: "0.5rem", 
+    marginBottom: "0.5rem",
+    boxSizing: "border-box", // MUITO IMPORTANTE: padding e borda não aumentam a largura total
   },
   buttonContainer: {
     display: "flex",
@@ -282,10 +301,11 @@ const styles = {
     width: "100%",
     marginTop: "1.5rem",
     marginBottom: "1.5rem",
+    boxSizing: "border-box",
   },
   loginBtn: {
     padding: "15px",
-    width: "160px",
+    width: "160px", // Largura do botão permanece como desejado.
     background: "#9747FF",
     color: "#F5F5F5",
     border: "none",
@@ -298,11 +318,13 @@ const styles = {
     transition: "background 0.3s ease",
     textDecoration: "none",
     display: "inline-block",
+    boxSizing: "border-box",
   },
   signupContainer: {
     borderTop: "1px solid #eee",
     paddingTop: "1.5rem",
     marginTop: "1rem",
+    boxSizing: "border-box",
   },
   signupLink: {
     fontFamily: "'Montserrat', sans-serif",
@@ -311,6 +333,7 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     gap: "0.5rem",
+    boxSizing: "border-box",
   },
   signupLinkAnchor: {
     color: "#9747FF",
@@ -319,6 +342,7 @@ const styles = {
   },
 };
 
+// Injeção de variáveis CSS globais (se você já tem isso em outro lugar, pode remover daqui)
 if (!document.getElementById('app-color-vars')) {
     const styleSheet = document.createElement("style");
     styleSheet.id = 'app-color-vars';

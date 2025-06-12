@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom"; // Link não é mais necessário aqui
+import { useNavigate } from "react-router-dom";
 import { ProgressoContext } from "../../../context/ProgressoContext";
 import styles from "../../../styles/Projecao.module.css";
 
@@ -111,7 +111,7 @@ const PopupAjuste = ({
                 <strong>
                   {formatarMoeda(
                     parseFloat(dadosAjuste.valor) /
-                      parseInt(dadosAjuste.prazoMeses, 10) || 0 // Evita NaN se prazoMeses for 0 ou inválido
+                      parseInt(dadosAjuste.prazoMeses, 10) || 0
                   )}
                 </strong>
               </p>
@@ -179,7 +179,7 @@ const Projecao = () => {
     }
     const mesesComprometidos = projecaoAtual.filter(
       (p) =>
-        p.recebimentos > 0 && p.gastos / p.recebimentos > 0.7 && p.gastos > 0 // Adicionado p.gastos > 0 para evitar divisão por zero se não houver gastos
+        p.recebimentos > 0 && p.gastos / p.recebimentos > 0.7 && p.gastos > 0
     );
     if (mesesComprometidos.length > 0) {
       const criticos = mesesComprometidos.filter(
@@ -274,7 +274,6 @@ const Projecao = () => {
               return false;
             });
 
-            // Filtra Gastos Fixos para o mês atual da projeção
             const gastosFixosDoMesProjetado = gastosFixos.filter((item) => {
               if (item.frequencia === "Mensal") return true;
               if (!item.mesPagamento) return false;
@@ -301,7 +300,15 @@ const Projecao = () => {
               return false;
             });
 
-            const metasComoGastos = metasInvestimentos.map((meta) => ({
+            // Filtra as metas para incluir APENAS as que estão ativas no mês corrente
+            const metasAtivasNoMes = metasInvestimentos.filter((meta) => {
+              // Uma meta é "ativa" no mês atual se o índice do mês
+              // for menor que o seu prazo em meses.
+              return indiceMesAtualDaProjecao < meta.prazoMeses;
+            });
+
+            // Mapeia as metas ativas no mês para o formato de gasto
+            const metasComoGastosNoMes = metasAtivasNoMes.map((meta) => ({
               id: `meta-${meta.id}`,
               originalId: meta.id,
               descricao: `Meta: ${meta.descricao}`,
@@ -309,8 +316,8 @@ const Projecao = () => {
                 meta.valorTotal && meta.prazoMeses
                   ? meta.valorTotal / meta.prazoMeses
                   : 0,
-              frequencia: "Mensal",
-              isMeta: true,
+              frequencia: "Mensal (Projeção)", // Apenas para exibição detalhada
+              isMeta: true, // Adiciona esta flag para fácil identificação
               categoria: "Metas",
               valorTotal: meta.valorTotal,
               prazoMeses: meta.prazoMeses,
@@ -324,13 +331,10 @@ const Projecao = () => {
               (sum, item) => sum + (item.valor || 0),
               0
             );
-            // Metas são sempre consideradas mensais na projeção
-            const totalMetasParcelas = metasInvestimentos.reduce(
-              (sum, meta) =>
-                sum +
-                (meta.valorTotal && meta.prazoMeses
-                  ? meta.valorTotal / meta.prazoMeses
-                  : 0),
+
+            // Agora, totalMetasParcelas só inclui as parcelas das metas ativas para o MÊS ATUAL
+            const totalMetasParcelas = metasComoGastosNoMes.reduce(
+              (sum, meta) => sum + (meta.valor || 0),
               0
             );
 
@@ -342,11 +346,11 @@ const Projecao = () => {
               recebimentos: totalRecebimentos,
               gastos: totalGastos,
               saldo,
-              recebimentosDetalhados: recebimentosDoMesProjetado, // Usa a lista filtrada
+              recebimentosDetalhados: recebimentosDoMesProjetado,
               gastosDetalhados: [
                 ...gastosFixosDoMesProjetado,
-                ...metasComoGastos,
-              ], // Usa a lista filtrada
+                ...metasComoGastosNoMes, // ESSA LISTA AGORA SÓ CONTÉM AS METAS ATIVAS NO MÊS
+              ],
             };
           }
         );
@@ -358,7 +362,7 @@ const Projecao = () => {
         console.error("Erro em calcularProjecaoComDadosAtuais:", err);
       }
     },
-    [gerarAlertas] // Não precisa de mesesNomes aqui pois é constante
+    [gerarAlertas]
   );
 
   const fetchDadosParaProjecao = useCallback(async () => {
@@ -658,7 +662,6 @@ const Projecao = () => {
                                   }
                                 `}
                     >
-                      {/* Mês não é mais um link */}
                       <td className={styles["table-cell"]}>{item.mes}</td>
                       <td className={styles["table-cell"]}>
                         {formatarMoeda(item.recebimentos)}
@@ -705,8 +708,9 @@ const Projecao = () => {
                                     >
                                       <div className={styles["detail-info"]}>
                                         <span>{gasto.descricao}</span>
-                                        {/* Adiciona detalhes de frequência e mês de referência */}
+                                        {/* Condição ajustada: só exibe detalhes de frequência se NÃO for uma meta */}
                                         {gasto.frequencia &&
+                                          !gasto.isMeta &&
                                           gasto.frequencia !== "Mensal" && (
                                             <span
                                               className={
@@ -764,7 +768,6 @@ const Projecao = () => {
                                       >
                                         <div className={styles["detail-info"]}>
                                           <span>{recebimento.descricao}</span>
-                                          {/* Adiciona detalhes de frequência e mês de referência */}
                                           {recebimento.frequencia &&
                                             recebimento.frequencia !==
                                               "Mensal" && (
@@ -830,20 +833,5 @@ const Projecao = () => {
     </div>
   );
 };
-
-// Injetor de CSS Vars (se não estiver global)
-if (!document.getElementById("app-color-vars")) {
-  const styleSheet = document.createElement("style");
-  styleSheet.id = "app-color-vars";
-  styleSheet.innerText = `
-      :root {
-        --roxo-principal: #9747FF; --roxo-escuro: #6C63FF; --roxo-claro: #a855f7;
-        --cinza-escuro: #2F2E41; --cinza-medio: #0D0C0B; --cinza-claro: #F5F5F5;
-        --branco: #FFFFFF; --sombra: 0 4px 6px rgba(0, 0, 0, 0.05);
-        --cor-sucesso: #28a745; --cor-perigo: #dc3545;
-      }
-    `;
-  document.head.appendChild(styleSheet);
-}
 
 export default Projecao;
